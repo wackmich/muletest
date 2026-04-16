@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
     <http:listener-config name="financial-services-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8081" />
     </http:listener-config>
-    <apikit:config name="financial-services-config" api="resource::8d3f2a1d-fd9c-4b44-9f7d-c9521f4edc9b:financial-services:1.0.0:raml:zip:financial-services.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="financial-services-config" api="resource::8d3f2a1d-fd9c-4b44-9f7d-c9521f4edc9b:financial-services:1.0.1:raml:zip:financial-services.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <os:object-store name="accountsStore" persistent="true" entryTtl="-1" expirationInterval="1" />
     <flow name="financial-services-main">
         <http:listener config-ref="financial-services-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
@@ -181,24 +182,93 @@ output application/json
         </ee:transform>
     </flow>
     <flow name="get:\accounts\(accountId):financial-services-config">
-        <ee:transform doc:name="Transform Message">
+        <ee:transform doc:name="Extract Account ID">
             <ee:variables>
-                <ee:set-variable variableName="accountId">attributes.uriParams.'accountId'</ee:set-variable>
+                <ee:set-variable variableName="accountId"><![CDATA[%dw 2.0
+output application/java
+type HttpRequestAttributes = Object { class: "org.mule.extension.http.api.HttpRequestAttributes" }
+---
+(attributes as HttpRequestAttributes).uriParams.accountId]]></ee:set-variable>
             </ee:variables>
         </ee:transform>
+        <os:retrieve doc:name="Retrieve Account" key="#[vars.accountId]" objectStore="accountsStore" />
         <ee:transform doc:name="Transform Message">
             <ee:message>
                 <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
-{
-  accountId: "ACC001",
-  accountHolder: "Max Mustermann",
-  balance: 15000.5,
-  currency: "EUR",
-  status: "ACTIVE"
-} as Object {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+payload as Object {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
             </ee:message>
         </ee:transform>
+        <error-handler>
+            <on-error-propagate type="OS:KEY_NOT_FOUND" logException="false">
+                <ee:transform doc:name="Account Not Found Response">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    message: "Account with ID " ++ (vars.accountId default "") ++ " not found"
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[404]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="post:\accounts:financial-services-config">
+        <ee:transform doc:name="Validate and Prepare Account">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+    accountId: payload.accountId,
+    accountHolder: payload.accountHolder,
+    balance: payload.balance default 0,
+    currency: payload.currency default "EUR",
+    status: payload.status default "ACTIVE"
+}]]></ee:set-payload>
+            </ee:message>
+            <ee:variables>
+                <ee:set-variable variableName="accountId"><![CDATA[payload.accountId]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <os:store doc:name="Store Account" key="#[vars.accountId]" objectStore="accountsStore" failIfPresent="true">
+            <os:value><![CDATA[#[payload]]]></os:value>
+        </os:store>
+        <ee:transform doc:name="Success Response">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    message: "Account created successfully",
+    accountId: vars.accountId
+}]]></ee:set-payload>
+            </ee:message>
+            <ee:variables>
+                <ee:set-variable variableName="httpStatus"><![CDATA[201]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <error-handler>
+            <on-error-propagate type="OS:KEY_ALREADY_EXISTS" logException="false">
+                <ee:transform doc:name="Conflict Response">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    message: "Account with ID " ++ (vars.accountId default "") ++ " already exists"
+}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[409]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
     </flow>
 </mule>
