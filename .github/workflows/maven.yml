@@ -37,6 +37,6 @@ jobs:
     - name: Deploy to Cloudhub
       run: mvn -B deploy --file pom.xml -s settings.xml -Dapp.groupId=$ORGA_ID -Dapp.password=$PASSWORD -Dapp.username=$USERNAME
       env:
-        USERNAME: ${{ secrets.CID }}
-        PASSWORD: ${{ secrets.CSECRET }}
+        USERNAME: ${{ secrets.USERNAME }}
+        PASSWORD: ${{ secrets.PASSWORD }}
         ORGA_ID: ${{ secrets.ORGAID }}
