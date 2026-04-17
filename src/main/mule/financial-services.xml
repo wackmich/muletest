@@ -6,7 +6,7 @@ http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/m
     </http:listener-config>
     <apikit:config name="financial-services-config" api="resource::8d3f2a1d-fd9c-4b44-9f7d-c9521f4edc9b:financial-services:1.0.1:raml:zip:financial-services.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <os:object-store name="accountsStore" persistent="true" entryTtl="-1" expirationInterval="1" />
-    <api-gateway:autodiscovery apiId="20857590" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="54758c46-3384-4920-9e52-287a9a3f273f" flowRef="financial-services-main" />
+    <api-gateway:autodiscovery apiId="20858036" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="54758c46-3384-4920-9e52-287a9a3f273f" flowRef="financial-services-main" />
 	<flow name="financial-services-main">
         <http:listener config-ref="financial-services-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">

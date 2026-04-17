@@ -4,12 +4,12 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.mycompany</groupId>
-	<artifactId>financial-services-impl</artifactId>
+	<groupId>8d3f2a1d-fd9c-4b44-9f7d-c9521f4edc9b</groupId>
+	<artifactId>financial-services-app</artifactId>
 	<version>1.0.0</version>
 	<packaging>mule-application</packaging>
 
-	<name>financial-services-impl</name>
+	<name>financial-services-app</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -17,6 +17,8 @@
 
 		<app.runtime>4.11.0</app.runtime>
 		<mule.maven.plugin.version>4.7.0</mule.maven.plugin.version>
+		<app.groupId>${project.groupId}</app.groupId>
+		<appName>${project.artifactId}</appName>
 	</properties>
 
 	<build>
@@ -33,32 +35,40 @@
 				<extensions>true</extensions>
 				<configuration>
 					<classifier>mule-application</classifier>
-<!-- 					<cloudhub2Deployment>
-						<uri>https://anypoint.mulesoft.com</uri>
-						<provider>MC</provider>
-						<environment>sandbox</environment>
-						<target>Cloudhub-US-East-2</target>
-						<muleVersion>4.6</muleVersion>
-						<username>${app.username}</username>
-						<password>${app.password}</password>
-						<applicationName>${appName}</applicationName>
-						<replicas>1</replicas>
-						<vCores>1</vCores>
-						<deploymentSettings>
-							<http>
-								<inbound>
-									<publicUrl>${publicURL}</publicUrl>
-									<forwardSslSession>true</forwardSslSession>
-									<lastMileSecurity>true</lastMileSecurity>
-								</inbound>
-							</http>
-						</deploymentSettings>
-					</cloudhub2Deployment> -->
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
-
+	<profiles>
+		<profile>
+			<id>cloudhub</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.mule.tools.maven</groupId>
+						<artifactId>mule-maven-plugin</artifactId>
+						<version>${mule.maven.plugin.version}</version>
+						<extensions>true</extensions>
+						<configuration>
+							<classifier>mule-application</classifier>
+							<cloudhub2Deployment>
+								<uri>https://anypoint.mulesoft.com</uri>
+								<provider>MC</provider>
+								<environment>Sandbox</environment>
+								<target>Cloudhub-US-East-2</target>
+								<muleVersion>4.11.0</muleVersion>
+								<username>${app.username}</username>
+								<password>${app.password}</password>
+								<applicationName>${appName}</applicationName>
+								<replicas>1</replicas>
+								<vCores>0.1</vCores>
+							</cloudhub2Deployment>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 	<dependencies>
 		<dependency>
 			<groupId>org.mule.connectors</groupId>
@@ -123,7 +133,7 @@
 		<repository>
 			<id>U-REPO</id>
 			<name>U Repo</name>
-			<url>https://maven.eu1.anypoint.mulesoft.com/api/v3/organizations/${app.groupId}/maven</url>
+			<url>https://maven.anypoint.mulesoft.com/api/v3/organizations/${app.groupId}/maven</url>
 			<layout>default</layout>
 		</repository>
 	</distributionManagement>
