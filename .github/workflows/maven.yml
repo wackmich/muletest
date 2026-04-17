@@ -31,8 +31,8 @@ jobs:
     - name: Build and Publish to Exchange
       run: mvn -B deploy -s settings.xml -Dapp.password=$PASSWORD -Dapp.username=$USERNAME
       env:
-        USERNAME: ${{ secrets.CID }}
-        PASSWORD: ${{ secrets.CSECRET }}
+        USERNAME: ${{ secrets.USERNAME }}
+        PASSWORD: ${{ secrets.PASSWORD }}
 
     - name: Deploy to Cloudhub
       run: mvn -B deploy --file pom.xml -s settings.xml -Dapp.groupId=$ORGA_ID -Dapp.password=$PASSWORD -Dapp.username=$USERNAME
