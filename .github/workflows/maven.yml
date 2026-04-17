@@ -35,7 +35,10 @@ jobs:
         PASSWORD: ${{ secrets.PASSWORD }}
 
     - name: Deploy to Cloudhub
-      run: mvn -B deploy -Pcloudhub -DmuleDeploy -s settings.xml  -Dapp.password=$PASSWORD -Dapp.username=$USERNAME
+      run: mvn -B deploy -Pcloudhub -DmuleDeploy -s settings.xml  -Dapp.password=$PASSWORD -Dapp.username=$USERNAME  -Danypoint.client_id=$CLIENT_ID -Danypoint.client_secret=$CLIENT_SECRET
       env:
         USERNAME: ${{ secrets.USERNAME }}
         PASSWORD: ${{ secrets.PASSWORD }}
+        CLIENT_ID: ${{ secrets.CLIENT_ID }}
+        CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+        
