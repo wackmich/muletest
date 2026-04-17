@@ -3,11 +3,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.mycompany</groupId>
-	<artifactId>financial-services</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+	<artifactId>financial-services-impl</artifactId>
+	<version>1.0.0</version>
 	<packaging>mule-application</packaging>
 
-	<name>financial-services</name>
+	<name>financial-services-impl</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -29,6 +29,9 @@
 				<artifactId>mule-maven-plugin</artifactId>
 				<version>${mule.maven.plugin.version}</version>
 				<extensions>true</extensions>
+				<configuration>
+					<classifier>mule-application</classifier>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
@@ -93,5 +96,12 @@
 			</snapshots>
 		</pluginRepository>
 	</pluginRepositories>
-
+  <distributionManagement>
+  <repository>
+  	<id>U-REPO</id>
+  	<name>U Repo</name>
+  	<url>https://maven.anypoint.mulesoft.com/api/v3/organization/${app.groupId}/maven</url>
+  	<layout>default</layout>
+  </repository>	
+  </distributionManagement>	
 </project>
